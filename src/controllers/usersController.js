@@ -6,11 +6,25 @@
 	delete - DELETE para remover um registro
 */
 
+const AppError = require("../utils/AppError");
+
+const sqliteConection = require('../database/sqlite')
+
 class UsersController {
-	create (request, response){
+	async create (request, response){
 		const {name, email, password} = request.body;
 
-    	response.status(201).json({name, email, password})
+		const db = await sqliteConection();
+
+		const checkUserExist = await db.get(`SELECT * FROM users WHERE email = (?)`, [email]);
+
+		if (checkUserExist) {
+			throw new AppError("Esse email já está em uso");
+		}
+		
+		await db.run("INSERT INTO users (name, email, password) VALUES (?,?,?)", [name, email, password]);
+
+		return response.status(201).json();
 	}
 }
 
