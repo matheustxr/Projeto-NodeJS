@@ -1,5 +1,6 @@
 const { hash, compare } = require("bcryptjs")
 const AppError = require("../utils/AppError");
+
 const sqliteConection = require('../database/sqlite')
 
 class UsersController {
@@ -23,10 +24,10 @@ class UsersController {
 
 	async update (request, response){
 		const { name, email, password, old_password } = request.body;
-		const { id } = request.params;
+		const user_id = request.user.id;
 
 		const db = await sqliteConection(); 
-		const user = await db.get("SELECT * FROM users WHERE id = (?)", [id]);
+		const user = await db.get("SELECT * FROM users WHERE id = (?)", [user_id]);
 
 		if (!user) {
 			throw new AppError("Usuário não encontrado");
@@ -46,9 +47,9 @@ class UsersController {
 		}
 
 		if ( password && old_password ){
-			const checkPassword = await compare(old_password, user.password);
+			const checkOldPassword = await compare(old_password, user.password);
 
-			if (!checkPassword) {
+			if (!checkOldPassword) {
                 throw new AppError("Senha antiga incorreta");
             }
 
@@ -62,7 +63,7 @@ class UsersController {
 			password = ?, 
 			updated_at  = DATETIME('now')
 			WHERE id = ?`, 
-			[user.name, user.email, user.password, user.id]
+			[user.name, user.email, user.password, user_id]
 		);
 
 		return response.json();
